@@ -1,0 +1,8 @@
+{
+  "NoTLS": "No TLS detected",
+  "TLS": "TLS detected",
+  "ThresholdNotSet": "Threshold not set",
+  "CALIBRATION_NOT_COMPLETED": "Calibration not completed",
+  "generic": "Analysis failed",
+  "not-enough-tumor": "Not enough tumor"
+}
