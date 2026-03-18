@@ -71,6 +71,7 @@ export type SlidesFilters = {
   specimenCategories: string[];
   tags: string[];
   statuses: UiResultStatus[];
+  resultLabels: string[];
 };
 
 export type SortDirection = "asc" | "desc";

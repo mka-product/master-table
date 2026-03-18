@@ -1,5 +1,6 @@
 import {
   Button,
+  Box,
   HStack,
   Input,
   InputGroup,
@@ -15,16 +16,19 @@ import {
   TagLabel,
   Text,
   Wrap,
-  Box,
 } from "@chakra-ui/react";
 import { SearchIcon, ChevronDownIcon } from "@chakra-ui/icons";
-import { isSlidesTableColumnVisible } from "../config/slides-table-columns";
+import {
+  isSlidesTableColumnVisible,
+  type SlidesTableColumnId,
+} from "../config/slides-table-columns";
 import type { SlidesFilters, UiResultStatus } from "../types/slides";
 
 type FilterOptions = {
   specimenCategories: string[];
   tags: string[];
   statuses: UiResultStatus[];
+  resultLabels: string[];
 };
 
 type Props = {
@@ -35,6 +39,7 @@ type Props = {
   onResetFilters: () => void;
   filterOptions: FilterOptions;
   isLoading: boolean;
+  visibleColumns: readonly SlidesTableColumnId[];
 };
 
 export function SlidesTableToolbar({
@@ -45,9 +50,10 @@ export function SlidesTableToolbar({
   onResetFilters,
   filterOptions,
   isLoading,
+  visibleColumns,
 }: Props) {
   const activeFilters = [
-    ...(isSlidesTableColumnVisible("specimen_category")
+    ...(isSlidesTableColumnVisible(visibleColumns, "specimen_category")
       ? filters.specimenCategories.map((value) => ({
           key: `specimen-${value}`,
           label: `Specimen: ${value}`,
@@ -58,7 +64,7 @@ export function SlidesTableToolbar({
             }),
         }))
       : []),
-    ...(isSlidesTableColumnVisible("tags")
+    ...(isSlidesTableColumnVisible(visibleColumns, "tags")
       ? filters.tags.map((value) => ({
           key: `tag-${value}`,
           label: `Associated Folders: ${value}`,
@@ -69,7 +75,7 @@ export function SlidesTableToolbar({
             }),
         }))
       : []),
-    ...(isSlidesTableColumnVisible("analysis_status")
+    ...(isSlidesTableColumnVisible(visibleColumns, "analysis_status")
       ? filters.statuses.map((value) => ({
           key: `status-${value}`,
           label: `Status: ${value}`,
@@ -77,6 +83,17 @@ export function SlidesTableToolbar({
             onFiltersChange({
               ...filters,
               statuses: filters.statuses.filter((item) => item !== value),
+            }),
+        }))
+      : []),
+    ...(isSlidesTableColumnVisible(visibleColumns, "results")
+      ? filters.resultLabels.map((value) => ({
+          key: `result-${value}`,
+          label: `Results: ${value}`,
+          onRemove: () =>
+            onFiltersChange({
+              ...filters,
+              resultLabels: filters.resultLabels.filter((item) => item !== value),
             }),
         }))
       : []),
@@ -92,12 +109,12 @@ export function SlidesTableToolbar({
           <Input
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search by slide name, folder, or product"
+            placeholder="Search by slide name, folder, product, or result"
             bg="white"
           />
         </InputGroup>
         <HStack justify={{ base: "flex-start", lg: "flex-end" }} spacing={3} flexWrap="wrap">
-          {isSlidesTableColumnVisible("specimen_category") ? (
+          {isSlidesTableColumnVisible(visibleColumns, "specimen_category") ? (
             <FilterMenu
               label="Specimen"
               options={filterOptions.specimenCategories}
@@ -110,7 +127,7 @@ export function SlidesTableToolbar({
               }
             />
           ) : null}
-          {isSlidesTableColumnVisible("tags") ? (
+          {isSlidesTableColumnVisible(visibleColumns, "tags") ? (
             <FilterMenu
               label="Associated Folders"
               options={filterOptions.tags}
@@ -123,7 +140,7 @@ export function SlidesTableToolbar({
               }
             />
           ) : null}
-          {isSlidesTableColumnVisible("analysis_status") ? (
+          {isSlidesTableColumnVisible(visibleColumns, "analysis_status") ? (
             <FilterMenu
               label="Status"
               options={filterOptions.statuses}
@@ -132,6 +149,19 @@ export function SlidesTableToolbar({
                 onFiltersChange({
                   ...filters,
                   statuses: value as UiResultStatus[],
+                })
+              }
+            />
+          ) : null}
+          {isSlidesTableColumnVisible(visibleColumns, "results") ? (
+            <FilterMenu
+              label="Results"
+              options={filterOptions.resultLabels}
+              value={filters.resultLabels}
+              onChange={(value) =>
+                onFiltersChange({
+                  ...filters,
+                  resultLabels: value as string[],
                 })
               }
             />

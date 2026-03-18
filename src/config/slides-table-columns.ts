@@ -1,4 +1,4 @@
-export const VISIBLE_SLIDES_TABLE_COLUMNS = [
+export const DEFAULT_VISIBLE_SLIDES_TABLE_COLUMNS = [
   "select",
   "name",
   "analysis_status",
@@ -7,8 +7,23 @@ export const VISIBLE_SLIDES_TABLE_COLUMNS = [
   "actions",
 ] as const;
 
-export function isSlidesTableColumnVisible(columnId: string) {
-  return VISIBLE_SLIDES_TABLE_COLUMNS.includes(
-    columnId as (typeof VISIBLE_SLIDES_TABLE_COLUMNS)[number],
-  );
+export type SlidesTableColumnId =
+  (typeof DEFAULT_VISIBLE_SLIDES_TABLE_COLUMNS)[number] | "specimen_category" | "results";
+
+export function isSlidesTableColumnVisible(
+  visibleColumns: readonly SlidesTableColumnId[],
+  columnId: string,
+) {
+  return visibleColumns.includes(columnId as SlidesTableColumnId);
+}
+
+export function toggleSlidesTableColumn(
+  visibleColumns: readonly SlidesTableColumnId[],
+  columnId: SlidesTableColumnId,
+) {
+  if (visibleColumns.includes(columnId)) {
+    return visibleColumns.filter((visibleColumn) => visibleColumn !== columnId);
+  }
+
+  return [...visibleColumns, columnId];
 }

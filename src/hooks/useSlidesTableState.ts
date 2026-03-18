@@ -10,6 +10,7 @@ const DEFAULT_FILTERS: SlidesFilters = {
   specimenCategories: [],
   tags: [],
   statuses: [],
+  resultLabels: [],
 };
 
 export function useSlidesTableState() {

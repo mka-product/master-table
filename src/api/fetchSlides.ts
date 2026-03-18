@@ -6,6 +6,7 @@ import type {
   UiResultStatus,
 } from "../types/slides";
 import { normalizeResultStatus } from "../utils/normalizeResultStatus";
+import { translateResultLabel } from "../utils/resultLabelDictionary";
 
 type PayloadLike = SlidesApiResponse;
 
@@ -23,6 +24,27 @@ function hasMatchingStatus(slide: Slide, statuses: UiResultStatus[]) {
   );
 }
 
+function getTranslatedResultLabel(result: Slide["results"][number]) {
+  return translateResultLabel(
+    result.result.output?.label ?? result.result.output?.error_type?.key ?? null,
+  );
+}
+
+function hasMatchingResultLabel(slide: Slide, resultLabels: string[]) {
+  if (resultLabels.length === 0) {
+    return true;
+  }
+
+  return slide.results.some((result) => {
+    if (result.visible === false || result.result.status === "Pending") {
+      return false;
+    }
+
+    const label = getTranslatedResultLabel(result);
+    return label ? resultLabels.includes(label) : false;
+  });
+}
+
 function matchesSearch(slide: Slide, searchTerm: string) {
   if (!searchTerm) {
     return true;
@@ -34,6 +56,14 @@ function matchesSearch(slide: Slide, searchTerm: string) {
     slide.specimen_category ?? "",
     ...slide.tags.map((tag) => tag.name),
     ...slide.results.map((result) => result.product.id),
+    ...slide.results.flatMap((result) => {
+      if (result.visible === false || result.result.status === "Pending") {
+        return [];
+      }
+
+      const label = getTranslatedResultLabel(result);
+      return label ? [label] : [];
+    }),
   ];
 
   return haystacks.some((value) => value.toLowerCase().includes(normalized));
@@ -92,6 +122,7 @@ export async function fetchSlides(
       specimenMatch &&
       tagMatch &&
       hasMatchingStatus(slide, params.filters.statuses) &&
+      hasMatchingResultLabel(slide, params.filters.resultLabels) &&
       matchesSearch(slide, params.search.trim())
     );
   });
@@ -120,10 +151,25 @@ export function getFilterOptions() {
     ),
   ] as string[];
   const tags = [...new Set(payload.data.flatMap((slide) => slide.tags.map((tag) => tag.name)))];
+  const resultLabels = [
+    ...new Set(
+      payload.data.flatMap((slide) =>
+        slide.results.flatMap((result) => {
+          if (result.visible === false || result.result.status === "Pending") {
+            return [];
+          }
+
+          const label = getTranslatedResultLabel(result);
+          return label ? [label] : [];
+        }),
+      ),
+    ),
+  ];
 
   return {
     specimenCategories: specimenCategories.sort(),
     tags: tags.sort(),
     statuses: ["success", "processing", "error"] as UiResultStatus[],
+    resultLabels: resultLabels.sort((left, right) => left.localeCompare(right)),
   };
 }

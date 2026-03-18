@@ -40,7 +40,7 @@ import {
 import { getFilterOptions } from "../api/fetchSlides";
 import {
   isSlidesTableColumnVisible,
-  VISIBLE_SLIDES_TABLE_COLUMNS,
+  type SlidesTableColumnId,
 } from "../config/slides-table-columns";
 import type { SlideRowViewModel } from "../types/slides";
 import { ResultChipsCell } from "./ResultChipsCell";
@@ -55,6 +55,7 @@ type Props = {
   isRefetching: boolean;
   error: Error | null;
   onSortChange: (sortBy: string | null, direction: "asc" | "desc" | null) => void;
+  visibleColumns: readonly SlidesTableColumnId[];
 };
 
 const columnHelper = createColumnHelper<SlideRowViewModel>();
@@ -226,10 +227,6 @@ const columns = [
   }),
 ];
 
-const visibleColumns = columns.filter((column) =>
-  VISIBLE_SLIDES_TABLE_COLUMNS.includes(column.id as (typeof VISIBLE_SLIDES_TABLE_COLUMNS)[number]),
-);
-
 export function SlidesTable({
   rows,
   totalRows,
@@ -239,15 +236,19 @@ export function SlidesTable({
   isRefetching,
   error,
   onSortChange,
+  visibleColumns,
 }: Props) {
   const sorting: SortingState =
     sortBy && sortDirection ? [{ id: sortBy, desc: sortDirection === "desc" }] : [];
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [selectionScope, setSelectionScope] = useState<"page" | "all" | null>(null);
+  const activeColumns = columns.filter((column) =>
+    isSlidesTableColumnVisible(visibleColumns, column.id),
+  );
 
   const table = useReactTable({
     data: rows,
-    columns: visibleColumns,
+    columns: activeColumns,
     state: {
       sorting,
       rowSelection,
@@ -340,7 +341,7 @@ export function SlidesTable({
               {headerGroup.headers.map((header) => {
                 const canSort =
                   ["name", "specimen_category", "updated_at"].includes(header.column.id) &&
-                  isSlidesTableColumnVisible(header.column.id);
+                  isSlidesTableColumnVisible(visibleColumns, header.column.id);
                 const currentSort = sorting.find((item) => item.id === header.column.id);
                 const isSlideNameColumn = header.column.id === "name";
                 const isSelectionColumn = header.column.id === "select";
@@ -392,7 +393,7 @@ export function SlidesTable({
           {isLoading
             ? Array.from({ length: 6 }).map((_, index) => (
                 <Tr key={`loading-${index}`}>
-                  {visibleColumns.map((column) => (
+                  {activeColumns.map((column) => (
                     <Td
                       key={`${column.id}-${index}`}
                       w={column.id === "select" ? "3.5rem" : column.id === "name" ? "22rem" : undefined}
