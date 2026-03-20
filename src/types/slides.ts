@@ -110,6 +110,7 @@ export type ResultChip = {
 export type SlideRowViewModel = {
   id: string;
   slideName: string;
+  isVisible: boolean;
   externalUrl: string | null;
   specimenCategory: string | null;
   tags: Array<{ id: string; name: string }>;

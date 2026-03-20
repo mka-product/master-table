@@ -1,4 +1,4 @@
-import { Tag, TagLabel, Tooltip, Wrap } from "@chakra-ui/react";
+import { Stack, Tag, TagLabel } from "@chakra-ui/react";
 import type { ResultChip } from "../types/slides";
 
 const CHIP_TONES: Record<
@@ -17,16 +17,12 @@ type Props = {
 
 export function ResultChipsCell({ chips }: Props) {
   return (
-    <Wrap spacing={2}>
+    <Stack spacing={2} align="flex-start">
       {chips.map((chip) => (
-        <Tooltip key={`${chip.productId}-${chip.label}`} label={chip.label} hasArrow>
-          <Tag colorScheme={CHIP_TONES[chip.tone]} variant="subtle" maxW="14rem">
-            <TagLabel overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
-              {chip.label}
-            </TagLabel>
-          </Tag>
-        </Tooltip>
+        <Tag key={`${chip.productId}-${chip.label}`} colorScheme={CHIP_TONES[chip.tone]} variant="subtle">
+          <TagLabel whiteSpace="normal">{chip.label}</TagLabel>
+        </Tag>
       ))}
-    </Wrap>
+    </Stack>
   );
 }

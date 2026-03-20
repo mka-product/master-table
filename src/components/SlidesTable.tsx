@@ -1,12 +1,15 @@
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  ChevronLeftIcon,
   DeleteIcon,
-  ExternalLinkIcon,
+  ViewIcon,
+  ViewOffIcon,
 } from "@chakra-ui/icons";
 import {
   Checkbox,
   Box,
+  Button,
   Flex,
   IconButton,
   Link,
@@ -56,6 +59,7 @@ type Props = {
   error: Error | null;
   onSortChange: (sortBy: string | null, direction: "asc" | "desc" | null) => void;
   visibleColumns: readonly SlidesTableColumnId[];
+  onToggleVisibility: (slideId: string) => void;
 };
 
 const columnHelper = createColumnHelper<SlideRowViewModel>();
@@ -67,19 +71,22 @@ function RowActionsMenu({ row }: { row: SlideRowViewModel }) {
   const remainingFolders = allFolders.filter((folder) => !currentFolders.includes(folder));
   const submenuItems = submenu === "add" ? remainingFolders : currentFolders;
 
-  if (!row.externalUrl) {
-    return <Text color="gray.400">Unavailable</Text>;
-  }
-
   return (
     <Menu placement="bottom-end">
       <MenuButton
         as={IconButton}
         aria-label="Open row actions"
         icon={
-          <Text fontSize="xl" lineHeight="1">
-            ...
-          </Text>
+          <Flex
+            align="center"
+            justify="center"
+            w="100%"
+            h="100%"
+            fontSize="xl"
+            lineHeight="1"
+          >
+            &hellip;
+          </Flex>
         }
         size="sm"
         variant="ghost"
@@ -90,10 +97,18 @@ function RowActionsMenu({ row }: { row: SlideRowViewModel }) {
           <Box px={3} py={2}>
             <Text fontWeight="semibold">More actions</Text>
           </Box>
-          <MenuItem onMouseEnter={() => setSubmenu("add")}>Add to folder</MenuItem>
-          <MenuItem onMouseEnter={() => setSubmenu("remove")}>Remove from folder</MenuItem>
-          <MenuItem onMouseEnter={() => setSubmenu(null)}>Download PDF reports</MenuItem>
-          <MenuItem onMouseEnter={() => setSubmenu(null)}>Start analysis</MenuItem>
+          <MenuItem
+            onMouseEnter={() => setSubmenu("add")}
+            icon={<ChevronLeftIcon color="gray.400" />}
+          >
+            Add to folder
+          </MenuItem>
+          <MenuItem
+            onMouseEnter={() => setSubmenu("remove")}
+            icon={<ChevronLeftIcon color="gray.400" />}
+          >
+            Remove from folder
+          </MenuItem>
           <MenuItem
             onMouseEnter={() => setSubmenu(null)}
             color="red.500"
@@ -101,20 +116,11 @@ function RowActionsMenu({ row }: { row: SlideRowViewModel }) {
           >
             Delete slide
           </MenuItem>
-          <MenuItem
-            as={Link}
-            href={row.externalUrl}
-            isExternal
-            icon={<ExternalLinkIcon />}
-            onMouseEnter={() => setSubmenu(null)}
-          >
-            Open slide
-          </MenuItem>
           {submenu ? (
             <Box
               position="absolute"
               top={submenu === "add" ? "3rem" : "5rem"}
-              left="calc(100% - 0.25rem)"
+              right="calc(100% - 0.25rem)"
               minW="13rem"
               bg="white"
               borderWidth="1px"
@@ -149,6 +155,42 @@ function RowActionsMenu({ row }: { row: SlideRowViewModel }) {
   );
 }
 
+function RowVisibilityButton({
+  row,
+  onToggleVisibility,
+}: {
+  row: SlideRowViewModel;
+  onToggleVisibility: (slideId: string) => void;
+}) {
+  return (
+    <Box
+      opacity={0}
+      pointerEvents="none"
+      transition="opacity 0.15s ease"
+      _groupHover={{
+        opacity: 1,
+        pointerEvents: "auto",
+      }}
+    >
+      <IconButton
+        size="sm"
+        aria-label={row.isVisible ? "Mark slide hidden" : "Mark slide visible"}
+        icon={
+          <Flex align="center" justify="center" w="100%" h="100%">
+            {row.isVisible ? <ViewOffIcon boxSize={4} /> : <ViewIcon boxSize={4} />}
+          </Flex>
+        }
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggleVisibility(row.id);
+        }}
+        variant="ghost"
+        borderRadius="full"
+      />
+    </Box>
+  );
+}
+
 const columns = [
   columnHelper.display({
     id: "select",
@@ -173,15 +215,26 @@ const columns = [
     header: "Slide Name",
     cell: (info) => (
       <Tooltip label={info.getValue()} hasArrow>
-        <Text
-          fontWeight="semibold"
-          overflow="hidden"
-          textOverflow="ellipsis"
-          whiteSpace="nowrap"
-          maxW="100%"
-        >
-          {info.getValue()}
-        </Text>
+        <Flex align="center" gap={2} maxW="100%">
+          {!info.row.original.isVisible ? (
+            <Box
+              w="0.625rem"
+              h="0.625rem"
+              borderRadius="full"
+              bg="blue.500"
+              flexShrink={0}
+            />
+          ) : null}
+          <Text
+            fontWeight="semibold"
+            overflow="hidden"
+            textOverflow="ellipsis"
+            whiteSpace="nowrap"
+            maxW="100%"
+          >
+            {info.getValue()}
+          </Text>
+        </Flex>
       </Tooltip>
     ),
   }),
@@ -223,7 +276,7 @@ const columns = [
   columnHelper.display({
     id: "actions",
     header: "Actions",
-    cell: (info) => <RowActionsMenu row={info.row.original} />,
+    cell: () => null,
   }),
 ];
 
@@ -237,6 +290,7 @@ export function SlidesTable({
   error,
   onSortChange,
   visibleColumns,
+  onToggleVisibility,
 }: Props) {
   const sorting: SortingState =
     sortBy && sortDirection ? [{ id: sortBy, desc: sortDirection === "desc" }] : [];
@@ -406,16 +460,33 @@ export function SlidesTable({
                 </Tr>
               ))
             : table.getRowModel().rows.map((row) => (
-                <Tr key={row.id}>
+                <Tr
+                  key={row.id}
+                  bg={row.original.isVisible ? undefined : "blue.50"}
+                  _hover={{
+                    bg: row.original.isVisible ? "gray.50" : "blue.100",
+                  }}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <Td
                       key={cell.id}
-                      verticalAlign="top"
+                      verticalAlign="middle"
+                      position={cell.column.id === "name" ? "relative" : undefined}
                       w={cell.column.id === "select" ? "3.5rem" : cell.column.id === "name" ? "22rem" : undefined}
                       minW={cell.column.id === "select" ? "3.5rem" : cell.column.id === "name" ? "22rem" : undefined}
                       maxW={cell.column.id === "select" ? "3.5rem" : cell.column.id === "name" ? "22rem" : undefined}
                     >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {cell.column.id === "actions" ? (
+                        <Flex justify="flex-end" align="center" gap={2} role="group">
+                          <RowVisibilityButton
+                            row={row.original}
+                            onToggleVisibility={onToggleVisibility}
+                          />
+                          <RowActionsMenu row={row.original} />
+                        </Flex>
+                      ) : (
+                        flexRender(cell.column.columnDef.cell, cell.getContext())
+                      )}
                     </Td>
                   ))}
                 </Tr>

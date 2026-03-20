@@ -4,7 +4,10 @@ import { deriveResultChip } from "../utils/deriveResultChip";
 import { deriveStatusSummary } from "../utils/deriveStatusSummary";
 import { normalizeResultStatus } from "../utils/normalizeResultStatus";
 
-export function useSlideRowModels(slides: Slide[] | undefined) {
+export function useSlideRowModels(
+  slides: Slide[] | undefined,
+  visibilityOverrides: Record<string, boolean> = {},
+) {
   return useMemo<SlideRowViewModel[]>(() => {
     if (!slides) {
       return [];
@@ -13,6 +16,7 @@ export function useSlideRowModels(slides: Slide[] | undefined) {
     return slides.map((slide) => ({
       id: slide.id,
       slideName: slide.name,
+      isVisible: visibilityOverrides[slide.id] ?? slide.fav,
       externalUrl: slide.external_url ?? null,
       specimenCategory: slide.specimen_category ?? null,
       tags: slide.tags.map(({ id, name }) => ({ id, name })),
@@ -25,5 +29,5 @@ export function useSlideRowModels(slides: Slide[] | undefined) {
         .map(deriveResultChip),
       raw: slide,
     }));
-  }, [slides]);
+  }, [slides, visibilityOverrides]);
 }
