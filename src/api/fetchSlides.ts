@@ -5,12 +5,34 @@ import type {
   SlidesQueryParams,
   UiResultStatus,
 } from "../types/slides";
+import { formatResultDisplayLabel } from "../utils/formatResultDisplayLabel";
 import { normalizeResultStatus } from "../utils/normalizeResultStatus";
-import { translateResultLabel } from "../utils/resultLabelDictionary";
 
 type PayloadLike = SlidesApiResponse;
 
 const payload = rawPayload as PayloadLike;
+
+function matchesUpdatedAtRange(slide: Slide, updatedAtFrom: string, updatedAtTo: string) {
+  const updatedAt = new Date(slide.updated_at).getTime();
+
+  if (updatedAtFrom) {
+    const fromDate = new Date(`${updatedAtFrom}T00:00:00`).getTime();
+
+    if (updatedAt < fromDate) {
+      return false;
+    }
+  }
+
+  if (updatedAtTo) {
+    const toDate = new Date(`${updatedAtTo}T23:59:59.999`).getTime();
+
+    if (updatedAt > toDate) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 function hasMatchingStatus(slide: Slide, statuses: UiResultStatus[]) {
   if (statuses.length === 0) {
@@ -24,12 +46,6 @@ function hasMatchingStatus(slide: Slide, statuses: UiResultStatus[]) {
   );
 }
 
-function getTranslatedResultLabel(result: Slide["results"][number]) {
-  return translateResultLabel(
-    result.result.output?.label ?? result.result.output?.error_type?.key ?? null,
-  );
-}
-
 function hasMatchingResultLabel(slide: Slide, resultLabels: string[]) {
   if (resultLabels.length === 0) {
     return true;
@@ -40,8 +56,7 @@ function hasMatchingResultLabel(slide: Slide, resultLabels: string[]) {
       return false;
     }
 
-    const label = getTranslatedResultLabel(result);
-    return label ? resultLabels.includes(label) : false;
+    return resultLabels.includes(formatResultDisplayLabel(result));
   });
 }
 
@@ -61,8 +76,7 @@ function matchesSearch(slide: Slide, searchTerm: string) {
         return [];
       }
 
-      const label = getTranslatedResultLabel(result);
-      return label ? [label] : [];
+      return [formatResultDisplayLabel(result)];
     }),
   ];
 
@@ -123,6 +137,7 @@ export async function fetchSlides(
       tagMatch &&
       hasMatchingStatus(slide, params.filters.statuses) &&
       hasMatchingResultLabel(slide, params.filters.resultLabels) &&
+      matchesUpdatedAtRange(slide, params.filters.updatedAtFrom, params.filters.updatedAtTo) &&
       matchesSearch(slide, params.search.trim())
     );
   });
@@ -159,17 +174,21 @@ export function getFilterOptions() {
             return [];
           }
 
-          const label = getTranslatedResultLabel(result);
-          return label ? [label] : [];
+          return [formatResultDisplayLabel(result)];
         }),
       ),
     ),
   ];
+  const updatedAtDates = payload.data
+    .map((slide) => slide.updated_at.slice(0, 10))
+    .sort((left, right) => left.localeCompare(right));
 
   return {
     specimenCategories: specimenCategories.sort(),
     tags: tags.sort(),
     statuses: ["success", "processing", "error"] as UiResultStatus[],
     resultLabels: resultLabels.sort((left, right) => left.localeCompare(right)),
+    updatedAtMin: updatedAtDates[0] ?? "",
+    updatedAtMax: updatedAtDates[updatedAtDates.length - 1] ?? "",
   };
 }

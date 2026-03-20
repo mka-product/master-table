@@ -16,6 +16,7 @@ import {
   TagLabel,
   Text,
   Wrap,
+  VStack,
 } from "@chakra-ui/react";
 import { SearchIcon, ChevronDownIcon } from "@chakra-ui/icons";
 import {
@@ -29,6 +30,8 @@ type FilterOptions = {
   tags: string[];
   statuses: UiResultStatus[];
   resultLabels: string[];
+  updatedAtMin: string;
+  updatedAtMax: string;
 };
 
 type Props = {
@@ -96,6 +99,32 @@ export function SlidesTableToolbar({
               resultLabels: filters.resultLabels.filter((item) => item !== value),
             }),
         }))
+      : []),
+    ...(isSlidesTableColumnVisible(visibleColumns, "updated_at") && filters.updatedAtFrom
+      ? [
+          {
+            key: `updated-from-${filters.updatedAtFrom}`,
+            label: `Updated from: ${filters.updatedAtFrom}`,
+            onRemove: () =>
+              onFiltersChange({
+                ...filters,
+                updatedAtFrom: "",
+              }),
+          },
+        ]
+      : []),
+    ...(isSlidesTableColumnVisible(visibleColumns, "updated_at") && filters.updatedAtTo
+      ? [
+          {
+            key: `updated-to-${filters.updatedAtTo}`,
+            label: `Updated to: ${filters.updatedAtTo}`,
+            onRemove: () =>
+              onFiltersChange({
+                ...filters,
+                updatedAtTo: "",
+              }),
+          },
+        ]
       : []),
   ];
 
@@ -166,6 +195,22 @@ export function SlidesTableToolbar({
               }
             />
           ) : null}
+          {isSlidesTableColumnVisible(visibleColumns, "updated_at") ? (
+            <DateFilterMenu
+              label="Updated At"
+              from={filters.updatedAtFrom}
+              to={filters.updatedAtTo}
+              min={filterOptions.updatedAtMin}
+              max={filterOptions.updatedAtMax}
+              onChange={(nextFrom, nextTo) =>
+                onFiltersChange({
+                  ...filters,
+                  updatedAtFrom: nextFrom,
+                  updatedAtTo: nextTo,
+                })
+              }
+            />
+          ) : null}
           <Button variant="outline" onClick={onResetFilters} isDisabled={isLoading}>
             Reset
           </Button>
@@ -200,7 +245,7 @@ type FilterMenuProps = {
 
 function FilterMenu({ label, options, value, onChange }: FilterMenuProps) {
   return (
-    <Menu closeOnSelect={false}>
+    <Menu closeOnSelect={false} placement="bottom-end">
       <MenuButton as={Button} rightIcon={<ChevronDownIcon />} variant="outline">
         <HStack spacing={2}>
           <Text>{label}</Text>
@@ -211,7 +256,7 @@ function FilterMenu({ label, options, value, onChange }: FilterMenuProps) {
           ) : null}
         </HStack>
       </MenuButton>
-      <MenuList minW="14rem">
+      <MenuList minW="14rem" maxW="min(30rem, calc(100vw - 2rem))">
         <MenuOptionGroup
           type="checkbox"
           value={value}
@@ -219,11 +264,78 @@ function FilterMenu({ label, options, value, onChange }: FilterMenuProps) {
           title={`Filter by ${label.toLowerCase()}`}
         >
           {options.map((option) => (
-            <MenuItemOption key={option} value={option}>
-              {option}
+            <MenuItemOption
+              key={option}
+              value={option}
+              whiteSpace="normal"
+              wordBreak="break-word"
+            >
+              <Text whiteSpace="normal" wordBreak="break-word">
+                {option}
+              </Text>
             </MenuItemOption>
           ))}
         </MenuOptionGroup>
+      </MenuList>
+    </Menu>
+  );
+}
+
+type DateFilterMenuProps = {
+  label: string;
+  from: string;
+  to: string;
+  min: string;
+  max: string;
+  onChange: (from: string, to: string) => void;
+};
+
+function DateFilterMenu({ label, from, to, min, max, onChange }: DateFilterMenuProps) {
+  const hasValue = Boolean(from || to);
+
+  return (
+    <Menu closeOnSelect={false} placement="bottom-end">
+      <MenuButton as={Button} rightIcon={<ChevronDownIcon />} variant="outline">
+        <HStack spacing={2}>
+          <Text>{label}</Text>
+          {hasValue ? (
+            <Text color="brand.600" fontSize="sm">
+              ({[from, to].filter(Boolean).length})
+            </Text>
+          ) : null}
+        </HStack>
+      </MenuButton>
+      <MenuList minW="18rem" maxW="min(22rem, calc(100vw - 2rem))" p={3}>
+        <VStack align="stretch" spacing={3}>
+          <Box>
+            <Text fontSize="sm" fontWeight="medium" mb={1}>
+              From
+            </Text>
+            <Input
+              type="date"
+              size="sm"
+              bg="white"
+              value={from}
+              min={min}
+              max={to || max}
+              onChange={(event) => onChange(event.target.value, to)}
+            />
+          </Box>
+          <Box>
+            <Text fontSize="sm" fontWeight="medium" mb={1}>
+              To
+            </Text>
+            <Input
+              type="date"
+              size="sm"
+              bg="white"
+              value={to}
+              min={from || min}
+              max={max}
+              onChange={(event) => onChange(from, event.target.value)}
+            />
+          </Box>
+        </VStack>
       </MenuList>
     </Menu>
   );

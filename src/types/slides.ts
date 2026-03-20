@@ -72,6 +72,8 @@ export type SlidesFilters = {
   tags: string[];
   statuses: UiResultStatus[];
   resultLabels: string[];
+  updatedAtFrom: string;
+  updatedAtTo: string;
 };
 
 export type SortDirection = "asc" | "desc";

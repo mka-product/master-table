@@ -11,6 +11,8 @@ const DEFAULT_FILTERS: SlidesFilters = {
   tags: [],
   statuses: [],
   resultLabels: [],
+  updatedAtFrom: "",
+  updatedAtTo: "",
 };
 
 export function useSlidesTableState() {
