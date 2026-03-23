@@ -2,12 +2,18 @@ import type { SlideResult } from "../types/slides";
 import { normalizeResultStatus } from "./normalizeResultStatus";
 import { translateResultLabel } from "./resultLabelDictionary";
 
-function formatProductDisplayName(result: SlideResult) {
-  const productName =
-    result.result.context?.model_admin?.product_name ?? result.product.id;
-  const productVersion =
-    result.result.context?.model_admin?.product_version ?? result.product.version;
+export function getProductDisplayParts(result: SlideResult) {
+  const productName = result.result.context?.model_admin?.product_name ?? result.product.id;
+  const productVersion = result.result.context?.model_admin?.product_version ?? result.product.version;
 
+  return {
+    productName,
+    productVersion: productVersion ?? null,
+  };
+}
+
+export function formatProductDisplayName(result: SlideResult) {
+  const { productName, productVersion } = getProductDisplayParts(result);
   return productVersion ? `${productName} (${productVersion})` : productName;
 }
 
@@ -25,9 +31,11 @@ function getRawResultLabel(result: SlideResult) {
   );
 }
 
-export function formatResultDisplayLabel(result: SlideResult) {
+export function formatAnalysisLabel(result: SlideResult) {
   const rawLabel = getRawResultLabel(result);
-  const label = translateResultLabel(rawLabel) ?? rawLabel;
+  return translateResultLabel(rawLabel) ?? rawLabel;
+}
 
-  return `${formatProductDisplayName(result)}: ${label}`;
+export function formatResultDisplayLabel(result: SlideResult) {
+  return `${formatProductDisplayName(result)}: ${formatAnalysisLabel(result)}`;
 }

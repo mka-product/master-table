@@ -40,6 +40,20 @@ type Props = {
   summary: StatusSummary;
 };
 
+function formatAnalysisDate(value: string | null) {
+  if (!value) {
+    return "Date unavailable";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString();
+}
+
 export function StatusSummaryCell({ summary }: Props) {
   return (
     <Flex gap={2} align="center" wrap="nowrap" whiteSpace="nowrap">
@@ -86,11 +100,21 @@ export function StatusSummaryCell({ summary }: Props) {
                       {details.map((detail, index) => (
                         <Box key={`${detail.productName}-${detail.analysisDate ?? index}`}>
                           <Flex justify="space-between" gap={3} align="flex-start">
-                            <Text fontSize="sm" fontWeight="medium">
-                              {detail.productName}
-                            </Text>
+                            <Box>
+                              <Text fontSize="sm" fontWeight="medium">
+                                {detail.productName}
+                              </Text>
+                              {detail.productVersion ? (
+                                <Text fontSize="xs" color="gray.500" mt={0.5}>
+                                  {detail.productVersion}
+                                </Text>
+                              ) : null}
+                              <Text fontSize="xs" color="gray.600" mt={0.5}>
+                                {detail.analysisLabel}
+                              </Text>
+                            </Box>
                             <Text fontSize="xs" color="gray.500" textAlign="right">
-                              {detail.analysisDate ?? "Date unavailable"}
+                              {formatAnalysisDate(detail.analysisDate)}
                             </Text>
                           </Flex>
                           {index < details.length - 1 ? <Divider mt={2} /> : null}

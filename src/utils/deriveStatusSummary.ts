@@ -1,4 +1,5 @@
 import type { SlideResult, StatusSummary, UiResultStatus } from "../types/slides";
+import { formatAnalysisLabel, getProductDisplayParts } from "./formatResultDisplayLabel";
 import { normalizeResultStatus } from "./normalizeResultStatus";
 
 const EMPTY_DETAILS: StatusSummary["details"] = {
@@ -14,14 +15,16 @@ export function deriveStatusSummary(results: SlideResult[]): StatusSummary {
   return visibleResults.reduce<StatusSummary>(
     (summary, result) => {
       const status = normalizeResultStatus(result);
-      const productName =
-        result.result.context?.model_admin?.product_name ?? result.product.id;
+      const { productName, productVersion } = getProductDisplayParts(result);
+      const analysisLabel = formatAnalysisLabel(result);
       const analysisDate = result.result.context?.analysis_date ?? null;
 
       summary[status] += 1;
       summary.total += 1;
       summary.details[status].push({
         productName,
+        productVersion,
+        analysisLabel,
         analysisDate,
       });
 

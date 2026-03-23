@@ -1,7 +1,7 @@
 export const DEFAULT_VISIBLE_SLIDES_TABLE_COLUMNS = [
   "select",
   "name",
-  "results",
+  "analysis_status",
   "updated_at",
   "tags",
   "actions",

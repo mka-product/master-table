@@ -97,6 +97,8 @@ export type StatusSummary = {
     UiResultStatus,
     Array<{
       productName: string;
+      productVersion: string | null;
+      analysisLabel: string;
       analysisDate: string | null;
     }>
   >;
